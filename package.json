@@ -1,0 +1,37 @@
+{
+  "name": "install-sfml",
+  "description": "GitHub Action: Install Simple and Fast Multimedia Library",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint .",
+    "test": "eslint . && jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oprypin/install-sfml.git"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "SFML",
+    "Setup"
+  ],
+  "author": "Oleh Prypin <oleh@pryp.in>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oprypin/install-sfml/issues"
+  },
+  "homepage": "https://github.com/oprypin/install-sfml",
+  "dependencies": {
+    "@actions/cache": "^1.0.5",
+    "@actions/core": "^1.2.6",
+    "@actions/tool-cache": "^1.6.1",
+    "@octokit/request": "^5.4.12",
+    "tag-cmp": "^1.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.17.0",
+    "jest": "^26.6.3"
+  }
+}

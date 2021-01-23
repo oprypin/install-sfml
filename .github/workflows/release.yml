@@ -1,0 +1,63 @@
+name: CI (release)
+
+on:
+  push:
+    branches:
+      - v1
+  schedule:
+    - cron: '0 6 * * 6'
+
+jobs:
+  try:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {sfml: latest, config: Release}
+          - {sfml: nightly}
+          - {sfml: '2.5.1', config: Debug}
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: windows-latest
+          - os: ubuntu-latest
+            config: {sfml: package}
+          - os: macos-latest
+            config: {sfml: package}
+
+    name: sfml ${{ matrix.config.sfml }} ${{ matrix.config.config }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm install --only=prod
+      - uses: oprypin/install-sfml@v1
+        with: ${{ matrix.config }}
+        id: install
+
+      - run: echo ${{ steps.install.outputs.sfml }}
+      - run: cmake . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo -DCMAKE_BUILD_TYPE=$c)
+        working-directory: sfml-project
+      - run: cmake --build . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo --config $c)
+        working-directory: sfml-project
+
+      - run: c++ main.cpp -lsfml-window -lsfml-system -omain
+        working-directory: sfml-project
+        if: runner.os != 'Windows' && matrix.config.config != 'Debug'
+
+      - uses: ilammy/msvc-dev-cmd@376515093de803c897e7e6d576553c3104267e17
+        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
+      - uses: oprypin/install-sfml@v1
+        with: ${{ matrix.config }}
+        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
+      - run: cl main.cpp sfml-window.lib sfml-system.lib
+        working-directory: sfml-project
+        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
+
+      - run: |
+          Xvfb :99 -screen 0 1024x768x24 +extension GLX &
+          echo DISPLAY=:99.0 >>$GITHUB_ENV
+        if: runner.os == 'Linux'
+      - run: ./$(c="${{ matrix.config.config }}"; >/dev/null ls "$c" && echo $c)/main
+        working-directory: sfml-project

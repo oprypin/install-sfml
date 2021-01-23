@@ -1,0 +1,18 @@
+name: Install SFML
+description: Install Simple and Fast Multimedia Library
+inputs:
+  sfml:
+    description: The version of SFML to install ("latest", "nightly", "2.5.1")
+    default: latest
+  config:
+    description: The configuration of the build ("Release", "Debug")
+    default: Release
+  token:
+    description: Personal access token (auto-populated)
+    default: ${{ github.token }}
+outputs:
+  sfml:
+    description: The actual version of SFML that was installed
+runs:
+  using: node12
+  main: index.js
