@@ -12,41 +12,49 @@ const FS = require("fs").promises;
 
 const execFile = Util.promisify(ChildProcess.execFile);
 
-async function run() {
-    const params = {"sfml": "latest", "config": "Release"};
-    for (const key of ["sfml", "config"]) {
-        let value;
-        if ((value = Core.getInput(key))) {
-            params[key] = value;
-        }
-    }
-    params.config = params.config.charAt(0).toUpperCase() + params.config.slice(1);
-
-    if (params.sfml === Package && getPlatform() === Linux) {
-        await installAptPackages(["libsfml-dev", "xvfb"]);
-        const {stdout} = await subprocess(["dpkg", "-s", "libsfml-dev"]);
-        Core.setOutput("sfml", stdout.match(NumericVersionSub)[0]);
-    } else if (params.sfml === Package && getPlatform() === Mac) {
-        await installBrewPackages(["sfml"]);
-        const {stdout} = await subprocess(["brew", "list", "sfml"]);
-        Core.setOutput("sfml", stdout.match(NumericVersionSub)[0]);
-    } else {
-        await installSfmlFromSource(params);
-    }
-}
-
 const Linux = "Linux", Mac = "macOS", Windows = "Windows";
 
-function getPlatform() {
-    const platform = process.env["INSTALL_SFML_PLATFORM"] || process.platform;
-    return {"linux": Linux, "darwin": Mac, "win32": Windows}[platform] || platform;
+const sysPlatform = process.env["INSTALL_SFML_PLATFORM"] || process.platform;
+const platform = {"linux": Linux, "darwin": Mac, "win32": Windows}[sysPlatform] || sysPlatform;
+
+let sudo = function (command) {
+    command.unshift("sudo", "-n");
+    return command;
+};
+
+async function run() {
+    if (platform === Windows || !await IO.which("sudo")) {
+        sudo = (command) => command;
+    }
+
+    try {
+        const params = {"sfml": "latest", "config": "Release"};
+        for (const key of ["sfml", "config"]) {
+            let value;
+            if ((value = Core.getInput(key))) {
+                params[key] = value;
+            }
+        }
+        params.config = params.config.charAt(0).toUpperCase() + params.config.slice(1);
+
+        if (params.sfml === Package && platform === Linux) {
+            await installSfmlApt();
+        } else if (params.sfml === Package && platform === Mac) {
+            await installSfmlBrew();
+        } else {
+            await installSfmlFromSource(params);
+        }
+    } catch (error) {
+        Core.setFailed(error);
+        process.exit(1);
+    }
 }
 
 const Latest = "latest";
 const Nightly = "nightly";
 const Package = "package";
 const NumericVersion = /^[0-9]+(\.[0-9]+)+$/;
-const NumericVersionSub = /\b[0-9]+(\.[0-9]+)+\b/;
+const NumericVersionSub = /(\b[0-9]+(\.[0-9]+)+\b)/;
 
 function checkVersion(what, version, allowed) {
     const numericVersion = NumericVersion.test(version) && version;
@@ -56,7 +64,7 @@ function checkVersion(what, version, allowed) {
         return version;
     }
     if ([Latest, Nightly, Package, numericVersion].includes(version)) {
-        throw `Version "${version}" of ${what} is not supported on ${getPlatform()}`;
+        throw `Version "${version}" of ${what} is not supported on ${platform}`;
     }
     throw `Version "${version}" of ${what} is invalid`;
 }
@@ -72,6 +80,13 @@ function addPath(key, ...items) {
         items.unshift(process.env[key]);
     }
     Core.exportVariable(key, items.join(Path.delimiter));
+}
+
+async function installSfmlApt() {
+    await installAptPackages(["libsfml-dev", "xvfb"]);
+    const {stdout} = await subprocess(["dpkg", "-s", "libsfml-dev"]);
+    Core.setOutput("sfml", stdout.match(NumericVersionSub)[0]);
+    Core.setOutput("path", "/usr");
 }
 
 async function installSfmlAptDeps({sfml}) {
@@ -95,13 +110,22 @@ async function installSfmlAptDeps({sfml}) {
 
 async function installAptPackages(packages) {
     Core.info("Installing packages");
-    await subprocess(["sudo", "-n", "apt-get", "update"]);
-    const {stdout} = await subprocess([
-        "sudo", "-n", "apt-get", "install", "-qy", "--no-install-recommends", "--no-upgrade", "--",
-    ].concat(packages));
+    await subprocess(sudo(["apt-get", "update"]));
+    const {stdout} = await subprocess(sudo([
+        "apt-get", "install", "-qy", "--no-install-recommends", "--no-upgrade", "--",
+    ].concat(packages)));
     Core.startGroup("Finished installing packages");
     Core.info(stdout);
     Core.endGroup();
+}
+
+async function installSfmlBrew() {
+    await installBrewPackages(["sfml"]);
+    const {stdout} = await subprocess(["brew", "list", "sfml"]);
+    const regex = new RegExp("^/[\\w/]+/sfml/" + NumericVersionSub.source, "m");
+    const [path, sfml] = stdout.match(regex);
+    Core.setOutput("sfml", sfml);
+    Core.setOutput("path", path);
 }
 
 async function installSfmlBrewDeps({sfml}) {
@@ -126,9 +150,9 @@ async function installSfmlFromSource({sfml, config}) {
 
 
     let depsFunc = async () => {};
-    if (getPlatform() === Linux) {
+    if (platform === Linux) {
         depsFunc = installSfmlAptDeps;
-    } else if (getPlatform() === Mac) {
+    } else if (platform === Mac) {
         depsFunc = installSfmlBrewDeps;
     }
     const depsTask = depsFunc({sfml: (sfml === Nightly || sfml === Latest) ? "2.6.0" : sfml});
@@ -154,10 +178,10 @@ async function installSfmlFromSource({sfml, config}) {
     await depsTask;
     {
         const command = ["cmake", "."];
-        if (getPlatform() !== Windows) {
+        if (platform !== Windows) {
             command.push(`-DCMAKE_BUILD_TYPE=${config}`);
         }
-        if (getPlatform() === Linux) {
+        if (platform === Linux) {
             command.push("-DCMAKE_INSTALL_PREFIX=/usr");
         }
         const {stdout} = await subprocess(command, {cwd: path});
@@ -167,7 +191,7 @@ async function installSfmlFromSource({sfml, config}) {
     }
     const command = ["cmake", "--build", ".", "-j", "4"];
     {
-        if (getPlatform() === Windows) {
+        if (platform === Windows) {
             command.push("--config", config);
         }
         const {stdout} = await subprocess(command, {cwd: path});
@@ -176,20 +200,22 @@ async function installSfmlFromSource({sfml, config}) {
         Core.endGroup();
     }
     {
-        if (getPlatform() !== Windows) {
-            command.unshift("sudo");
-        }
         command.push("--target", "install");
-        const {stdout} = await subprocess(command, {cwd: path});
+        const {stdout} = await subprocess(sudo(command), {cwd: path});
         Core.startGroup("Finished installing SFML");
         Core.info(stdout);
         Core.endGroup();
     }
-    if (getPlatform() === Windows) {
+    if (platform === Windows) {
         const base = "C:\\Program Files (x86)\\SFML";
         addPath("INCLUDE", Path.join(base, "include"));
         addPath("LIB", Path.join(base, "lib"));
         addPath("PATH", Path.join(base, "bin"));
+        Core.setOutput("path", base);
+    } else if (platform === Linux) {
+        Core.setOutput("path", "/usr");
+    } else {
+        Core.setOutput("path", "/usr/local");
     }
 
     if (restored !== cacheKey) {

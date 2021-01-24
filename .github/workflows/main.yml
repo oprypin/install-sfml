@@ -36,7 +36,8 @@ jobs:
         with: ${{ matrix.config }}
         id: install
 
-      - run: echo ${{ steps.install.outputs.sfml }}
+      - run: |
+          echo '${{ steps.install.outputs.sfml }}' : '${{ steps.install.outputs.path }}'
       - run: cmake . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo -DCMAKE_BUILD_TYPE=$c)
         working-directory: sfml-project
       - run: cmake --build . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo --config $c)
