@@ -110,7 +110,9 @@ async function installSfmlAptDeps({sfml}) {
 
 async function installAptPackages(packages) {
     Core.info("Installing packages");
-    await subprocess(sudo(["apt-get", "update"]));
+    try {
+        await subprocess(sudo(["apt-get", "update"]));
+    } catch (error) {}
     const {stdout} = await subprocess(sudo([
         "apt-get", "install", "-qy", "--no-install-recommends", "--no-upgrade", "--",
     ].concat(packages)));
@@ -139,6 +141,7 @@ async function installSfmlBrewDeps({sfml}) {
 
 async function installBrewPackages(packages) {
     Core.info("Installing packages");
+    Core.exportVariable("HOMEBREW_NO_INSTALL_CLEANUP", "1");
     const {stdout} = await subprocess(["brew", "install"].concat(packages));
     Core.startGroup("Finished installing packages");
     Core.info(stdout);
