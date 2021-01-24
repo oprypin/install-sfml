@@ -13,6 +13,8 @@ inputs:
 outputs:
   sfml:
     description: The actual version of SFML that was installed
+  path:
+    description: The directory where SFML was installed, so you can use '[path]/include' etc.
 runs:
   using: node12
   main: index.js
