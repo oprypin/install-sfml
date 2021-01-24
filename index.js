@@ -110,7 +110,9 @@ async function installSfmlAptDeps({sfml}) {
 
 async function installAptPackages(packages) {
     Core.info("Installing packages");
-    await subprocess(sudo(["apt-get", "update"]));
+    try {
+        await subprocess(sudo(["apt-get", "update"]));
+    } catch (error) {}
     const {stdout} = await subprocess(sudo([
         "apt-get", "install", "-qy", "--no-install-recommends", "--no-upgrade", "--",
     ].concat(packages)));
