@@ -139,6 +139,7 @@ async function installSfmlBrewDeps({sfml}) {
 
 async function installBrewPackages(packages) {
     Core.info("Installing packages");
+    Core.exportVariable("HOMEBREW_NO_INSTALL_CLEANUP", "1");
     const {stdout} = await subprocess(["brew", "install"].concat(packages));
     Core.startGroup("Finished installing packages");
     Core.info(stdout);
