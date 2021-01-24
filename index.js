@@ -151,7 +151,6 @@ async function installBrewPackages(packages) {
 async function installSfmlFromSource({sfml, config}) {
     checkVersion("SFML", sfml, [Latest, Nightly, NumericVersion]);
 
-
     let depsFunc = async () => {};
     if (platform === Linux) {
         depsFunc = installSfmlAptDeps;
