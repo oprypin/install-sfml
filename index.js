@@ -54,7 +54,7 @@ const Latest = "latest";
 const Nightly = "nightly";
 const Package = "package";
 const NumericVersion = /^[0-9]+(\.[0-9]+)+$/;
-const NumericVersionSub = /(\b[0-9]+(\.[0-9]+)+\b)/;
+const NumericVersionSub = /(\b[0-9]+(\.[0-9]+)+(?=\W|_))/;
 
 function checkVersion(what, version, allowed) {
     const numericVersion = NumericVersion.test(version) && version;
@@ -124,7 +124,7 @@ async function installAptPackages(packages) {
 async function installSfmlBrew() {
     await installBrewPackages(["sfml"]);
     const {stdout} = await subprocess(["brew", "list", "sfml"]);
-    const regex = new RegExp("^/[\\w/]+/sfml/" + NumericVersionSub.source, "m");
+    const regex = new RegExp("^/[\\w/]+/sfml/" + NumericVersionSub.source + "[^/]*", "m");
     const [path, sfml] = stdout.match(regex);
     Core.setOutput("sfml", sfml);
     Core.setOutput("path", path);
@@ -150,7 +150,6 @@ async function installBrewPackages(packages) {
 
 async function installSfmlFromSource({sfml, config}) {
     checkVersion("SFML", sfml, [Latest, Nightly, NumericVersion]);
-
 
     let depsFunc = async () => {};
     if (platform === Linux) {
