@@ -24,13 +24,13 @@
   },
   "homepage": "https://github.com/oprypin/install-sfml",
   "dependencies": {
-    "@actions/cache": "^1.0.5",
+    "@actions/cache": "^1.0.7",
     "@actions/core": "^1.2.6",
     "@actions/tool-cache": "^1.6.1",
-    "@octokit/request": "^5.4.12",
+    "@octokit/request": "^5.4.15",
     "tag-cmp": "^1.0.1"
   },
   "devDependencies": {
-    "eslint": "^7.17.0"
+    "eslint": "^7.24.0"
   }
 }
