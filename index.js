@@ -163,12 +163,11 @@ async function installSfmlFromSource({sfml, config}) {
     Core.setOutput("sfml", ref);
     const path = Path.join(process.env["RUNNER_TEMP"], `sfml-${sfml}-${config}`);
     const cacheKey = `install-sfml-v1-${ref}-${config}--${OS.arch()}-${OS.platform()}-${OS.release()}`;
-    const cacheKey2 = `install-sfml-v1-${sfml}-${config}--${OS.arch()}-${OS.platform()}`;
 
     let restored = null;
     try {
         Core.info(`Trying to restore cache: key '${cacheKey}`);
-        restored = await Cache.restoreCache([path], cacheKey, [cacheKey2]);
+        restored = await Cache.restoreCache([path], cacheKey);
     } catch (error) {
         Core.warning(error.message);
     }
@@ -176,6 +175,9 @@ async function installSfmlFromSource({sfml, config}) {
         Core.info(`Cache not found for key '${cacheKey}'`);
         await downloadSource({name: "SFML", ref, path, apiBase: GitHubApiBase});
     }
+    try {
+        FS.unlink(Path.join(path, "CMakeCache.txt"));
+    } catch (error) {}
 
     await depsTask;
     {
