@@ -49,7 +49,7 @@ jobs:
         working-directory: sfml-project
         if: runner.os != 'Windows' && matrix.config.config != 'Debug'
 
-      - uses: ilammy/msvc-dev-cmd@376515093de803c897e7e6d576553c3104267e17
+      - uses: ilammy/msvc-dev-cmd@cec98b9d092141f74527d0afa6feb2af698cfe89
         if: runner.os == 'Windows' && matrix.config.config != 'Debug'
       - uses: ./
         with: ${{ matrix.config }}
