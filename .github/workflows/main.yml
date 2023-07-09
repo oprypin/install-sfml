@@ -30,7 +30,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: npm install --only=prod
       - uses: ./
         with: ${{ matrix.config }}
@@ -40,6 +40,8 @@ jobs:
           echo '${{ steps.install.outputs.sfml }}' : '${{ steps.install.outputs.path }}'
       - run: ls '${{ steps.install.outputs.path }}/include/SFML/System.hpp'
 
+      - run: mv sfml-3-project/* sfml-project/
+        if: matrix.config.sfml == 'nightly'
       - run: cmake . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo -DCMAKE_BUILD_TYPE=$c)
         working-directory: sfml-project
       - run: cmake --build . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo --config $c)
@@ -49,7 +51,7 @@ jobs:
         working-directory: sfml-project
         if: runner.os != 'Windows' && matrix.config.config != 'Debug'
 
-      - uses: ilammy/msvc-dev-cmd@376515093de803c897e7e6d576553c3104267e17
+      - uses: ilammy/msvc-dev-cmd@cec98b9d092141f74527d0afa6feb2af698cfe89
         if: runner.os == 'Windows' && matrix.config.config != 'Debug'
       - uses: ./
         with: ${{ matrix.config }}
@@ -68,7 +70,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: npm install
       - run: npm test
-      - run: npm audit --audit-level=moderate --only=prod

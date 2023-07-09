@@ -176,7 +176,7 @@ async function installSfmlFromSource({sfml, config}) {
         await downloadSource({name: "SFML", ref, path, apiBase: GitHubApiBase});
     }
     try {
-        FS.unlink(Path.join(path, "CMakeCache.txt"));
+        await FS.unlink(Path.join(path, "CMakeCache.txt"));
     } catch (error) {}
 
     await depsTask;
