@@ -40,6 +40,8 @@ jobs:
           echo '${{ steps.install.outputs.sfml }}' : '${{ steps.install.outputs.path }}'
       - run: ls '${{ steps.install.outputs.path }}/include/SFML/System.hpp'
 
+      - run: mv sfml-3-project/* sfml-project/
+        if: matrix.config.sfml == 'nightly'
       - run: cmake . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo -DCMAKE_BUILD_TYPE=$c)
         working-directory: sfml-project
       - run: cmake --build . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo --config $c)
