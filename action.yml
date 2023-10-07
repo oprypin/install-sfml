@@ -16,5 +16,5 @@ outputs:
   path:
     description: The directory where SFML was installed, so you can use '[path]/include' etc.
 runs:
-  using: node16
+  using: node20
   main: index.js
