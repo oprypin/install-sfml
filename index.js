@@ -1,14 +1,14 @@
-const Core = require("@actions/core");
-const ToolCache = require("@actions/tool-cache");
-const Cache = require("@actions/cache");
-const IO = require("@actions/io");
-const Octokit = require("@octokit/request");
-const {cmpTags} = require("tag-cmp");
-const Path = require("path");
-const ChildProcess = require("child_process");
-const Util = require("util");
-const OS = require("os");
-const FS = require("fs").promises;
+import Cache from "@actions/cache";
+import ChildProcess from "child_process";
+import Core from "@actions/core";
+import {promises as FS} from "fs";
+import IO from "@actions/io";
+import OS from "os";
+import Octokit from "@octokit/request";
+import Path from "path";
+import ToolCache from "@actions/tool-cache";
+import Util from "util";
+import {cmpTags} from "tag-cmp";
 
 const execFile = Util.promisify(ChildProcess.execFile);
 
@@ -296,6 +296,4 @@ async function onlySubdir(path) {
     return Path.join(path, subDir);
 }
 
-if (require.main === module) {
-    run();
-}
+run();

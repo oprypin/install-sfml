@@ -2,6 +2,7 @@
   "name": "install-sfml",
   "description": "GitHub Action: Install Simple and Fast Multimedia Library",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "lint": "eslint .",
