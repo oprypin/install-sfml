@@ -47,19 +47,6 @@ jobs:
       - run: cmake --build . $(c="${{ matrix.config.config }}"; [[ $c ]] && echo --config $c)
         working-directory: sfml-project
 
-      - run: c++ main.cpp -lsfml-window -lsfml-system -omain
-        working-directory: sfml-project
-        if: runner.os != 'Windows' && matrix.config.config != 'Debug'
-
-      - uses: ilammy/msvc-dev-cmd@cec98b9d092141f74527d0afa6feb2af698cfe89
-        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
-      - uses: oprypin/install-sfml@v1
-        with: ${{ matrix.config }}
-        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
-      - run: cl main.cpp sfml-window.lib sfml-system.lib
-        working-directory: sfml-project
-        if: runner.os == 'Windows' && matrix.config.config != 'Debug'
-
       - run: |
           Xvfb :99 -screen 0 1024x768x24 +extension GLX &
           echo DISPLAY=:99.0 >>$GITHUB_ENV
