@@ -16,13 +16,21 @@ jobs:
           - {sfml: latest, config: Release}
           - {sfml: nightly}
           - {sfml: '2.5.1', config: Debug}
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          - ubuntu-latest
+          - macos-latest  # arm64
+          - macos-13  # x64
+          - windows-latest
         include:
-          - os: windows-latest
           - os: ubuntu-latest
             config: {sfml: package}
           - os: macos-latest
             config: {sfml: package}
+          - os: macos-13
+            config: {sfml: package}
+        exclude:
+          - os: macos-latest
+            config: {sfml: '2.5.1', config: Debug}
 
     name: sfml ${{ matrix.config.sfml }} ${{ matrix.config.config }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -30,7 +38,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: npm install --only=prod
       - uses: oprypin/install-sfml@v1
         with: ${{ matrix.config }}
@@ -51,5 +59,5 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 +extension GLX &
           echo DISPLAY=:99.0 >>$GITHUB_ENV
         if: runner.os == 'Linux'
-      - run: ./$(c="${{ matrix.config.config }}"; >/dev/null ls "$c" && echo $c)/main
+      - run: ./$(c="${{ matrix.config.config }}"; 2>/dev/null ls "$c" && echo $c)/main
         working-directory: sfml-project
