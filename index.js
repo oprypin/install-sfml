@@ -91,7 +91,7 @@ async function installSfmlApt() {
 
 async function installSfmlAptDeps({sfml}) {
     checkVersion("SFML", sfml, [NumericVersion]);
-    let packages = [
+    const packages = [
         "libxrandr-dev", "libudev-dev", "libopenal-dev", "libflac-dev", "libvorbis-dev",
         "libgl1-mesa-dev", "libegl1-mesa-dev",
     ];
@@ -132,7 +132,7 @@ async function installSfmlBrew() {
 
 async function installSfmlBrewDeps({sfml}) {
     checkVersion("SFML", sfml, [NumericVersion]);
-    let packages = ["flac", "freetype", "libogg", "libvorbis"];
+    const packages = ["flac", "freetype", "libogg", "libvorbis"];
     if (cmpTags(sfml, "2.5") < 0) {
         packages.push("jpeg");
     }
