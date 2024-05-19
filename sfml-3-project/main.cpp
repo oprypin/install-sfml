@@ -3,7 +3,7 @@
 int main() {
     sf::Window window(sf::VideoMode({800, 600}), "SFML");
 
-    for (sf::Event event; window.pollEvent(event););
+    while (const auto event = window.pollEvent())
 
     window.display();
 
