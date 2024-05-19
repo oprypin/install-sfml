@@ -4,7 +4,7 @@ import Core from "@actions/core";
 import {promises as FS} from "fs";
 import IO from "@actions/io";
 import OS from "os";
-import Octokit from "@octokit/request";
+import {Octokit} from "@octokit/rest";
 import Path from "path";
 import ToolCache from "@actions/tool-cache";
 import Util from "util";
@@ -159,7 +159,7 @@ async function installSfmlFromSource({sfml, config}) {
     }
     const depsTask = depsFunc({sfml: (sfml === Nightly || sfml === Latest) ? "2.6.0" : sfml});
 
-    const ref = await findRef({name: "SFML", version: sfml, apiBase: GitHubApiBase});
+    const ref = await findRef({name: "SFML", version: sfml, repo: Repo});
     Core.setOutput("sfml", ref);
     const path = Path.join(process.env["RUNNER_TEMP"], `sfml-${sfml}-${config}`);
     const cacheKey = `install-sfml-v1-${ref}-${config}--${OS.arch()}-${OS.platform()}-${OS.release()}`;
@@ -173,7 +173,7 @@ async function installSfmlFromSource({sfml, config}) {
     }
     if (!restored) {
         Core.info(`Cache not found for key '${cacheKey}'`);
-        await downloadSource({name: "SFML", ref, path, apiBase: GitHubApiBase});
+        await downloadSource({name: "SFML", ref, path, repo: Repo});
     }
     try {
         await FS.unlink(Path.join(path, "CMakeCache.txt"));
@@ -232,64 +232,52 @@ async function installSfmlFromSource({sfml, config}) {
     }
 }
 
-const GitHubApiBase = "/repos/SFML/SFML";
+const Repo = {owner: "SFML", repo: "SFML"};
 
-async function findRelease({name, apiBase, tag}) {
+async function findRelease({name, repo, tag}) {
     Core.info(`Looking for latest ${name} release`);
-    const releasesResp = await githubGet({
-        url: apiBase + "/releases/" + (tag ? "tags/" + tag : "latest"),
-    });
+    const releasesResp = await (tag
+        ? github.rest.repos.getReleaseByTag({...repo, tag})
+        : github.rest.repos.getLatestRelease(repo));
     const release = releasesResp.data;
     Core.info(`Found ${name} release ${release["html_url"]}`);
     return release;
 }
 
-async function findLatestCommit({name, apiBase, branch = "master"}) {
+async function findLatestCommit({name, repo, branch = "master"}) {
     Core.info(`Looking for latest ${name} commit`);
-    const commitsResp = await githubGet({
-        url: apiBase + "/commits/:branch",
-        "branch": branch,
+    const commitsResp = await github.rest.repos.getCommit({
+        ...repo, "ref": branch,
     });
     const commit = commitsResp.data;
     Core.info(`Found ${name} commit ${commit["html_url"]}`);
     return commit["sha"];
 }
 
-async function findRef({name, apiBase, version}) {
+async function findRef({name, repo, version}) {
     if (version === Nightly) {
-        return findLatestCommit({name, apiBase});
+        return findLatestCommit({name, repo});
     } else if (version === Latest) {
-        const release = await findRelease({name, apiBase});
+        const release = await findRelease({name, repo});
         return release["tag_name"];
     }
     return version;
 }
 
-async function downloadSource({name, apiBase, ref, path}) {
+async function downloadSource({name, repo, ref, path}) {
     Core.info(`Downloading ${name} source for ${ref}`);
-    const downloadedPath = await githubDownloadViaRedirect({
-        url: apiBase + "/zipball/:ref",
-        "ref": ref,
+    const resp = await github.rest.repos.downloadZipballArchive({
+        ...repo, ref,
+        request: {redirect: "manual"},
     });
+    const url = resp.headers["location"];
+    const downloadedPath = await ToolCache.downloadTool(url);
     Core.info(`Extracting ${name} source`);
     const extractedPath = await ToolCache.extractZip(downloadedPath);
     await IO.mv(await onlySubdir(extractedPath), path);
 }
 
-function githubGet(request) {
-    Core.debug(request);
-    const token = Core.getInput("token");
-    const octokit = token ? Octokit.request.defaults({
-        headers: {"authorization": "token " + token},
-    }) : Octokit.request;
-    return octokit(request);
-}
-
-async function githubDownloadViaRedirect(request) {
-    request.request = {redirect: "manual"};
-    const resp = await githubGet(request);
-    return ToolCache.downloadTool(resp.headers["location"]);
-}
+const github = new Octokit({auth: Core.getInput("token") || null});
 
 async function onlySubdir(path) {
     const [subDir] = await FS.readdir(path);
