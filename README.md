@@ -33,11 +33,11 @@ API
 ---
 
 | Input          | Value            | Default | Description
-| -------------- | ---------------- | ------- | ----------------------------
-| sfml           | `latest`         | ✓       | SFML version to build, or  
-|                | `nightly`        |         | `package` to install from a 
-|                | `package`        |         | package manager on Mac or 
-|                | `2.6.1` or other |         | Linux
+| -------------- | ---------------- | ------- | -------------------------------------------------------------------------------------
+| sfml           | `latest`         | ✓       | SFML version to build, or `package` to install from a package manager on Mac or Linux
+|                | `nightly`        |         | 
+|                | `package`        |         | 
+|                | `2.6.1` or other |         | 
 | config         | Release          | ✓       | Build Release binaries.
 |                | Debug            |         | Build Debug binaries.
 
